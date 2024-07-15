@@ -1,0 +1,126 @@
+
+import torch.nn as nn
+
+# Define five different neural networks
+
+# Network 1
+class Net1(nn.Module):
+    def __init__(self):
+        super(Net1, self).__init__()
+        self.layer1 = nn.Linear(256, 128)
+        self.layer2 = nn.Linear(128, 64)
+        self.layer3 = nn.Linear(64, 32)
+        self.layer4 = nn.Linear(32, 16)
+
+    def forward(self, x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+        return x
+
+# Network 2
+class Net2(nn.Module):
+    def __init__(self):
+        super(Net2, self).__init__()
+        self.layer1 = nn.Conv1d(1, 16, 3)
+        self.layer2 = nn.Conv1d(16, 32, 3)
+        self.layer3 = nn.Conv1d(32, 64, 3)
+
+    def forward(self, x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        return x
+
+# Network 3
+class Net3(nn.Module):
+    def __init__(self):
+        super(Net3, self).__init__()
+        self.layer1 = nn.Conv2d(1, 16, 3)
+        self.layer2 = nn.Conv2d(16, 32, 3)
+        self.layer3 = nn.Conv2d(32, 64, 3)
+
+    def forward(self, x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        return x
+
+# Network 4
+class Net4(nn.Module):
+    def __init__(self):
+        super(Net4, self).__init__()
+        self.layer1 = nn.Conv3d(1, 16, 3)
+        self.layer2 = nn.Conv3d(16, 32, 3)
+
+    def forward(self, x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+        return x
+
+# Network 5
+class Net5(nn.Module):
+    def __init__(self):
+        super(Net5, self).__init__()
+        self.layer1 = nn.Linear(128, 64)
+        self.layer2 = nn.Conv2d(1, 16, 3)
+        self.layer3 = nn.Conv2d(16, 32, 3)
+        self.layer4 = nn.Linear(32, 16)
+
+    def forward(self, x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+        return x
+
+# List of networks
+networks = [Net1(), Net2(), Net3(), Net4(), Net5()]
+
+# Manually generated expected descriptions
+expected_descriptions = [
+    "Input shape: [b, 256], Output shape: [b, 16]",
+    "Input shape: [b, 1, 256], Output shape: [b, 64, 250]",
+    "Input shape: [b, 1, 256, 256], Output shape: [b, 64, 252, 252]",
+    "Input shape: [b, 1, 64, 64, 64], Output shape: [b, 32, 60, 60, 60]",
+    "Input shape: [b, 128], Output shape: [b, 16]"
+]
+
+# Function to convert network architecture to text
+def network_to_text(network):
+    layers = []
+    for layer in network.children():
+        if isinstance(layer, nn.Linear):
+            layers.append(f"Linear(in_features={layer.in_features}, out_features={layer.out_features})")
+        elif isinstance(layer, nn.Conv1d):
+            layers.append(f"Conv1d(in_channels={layer.in_channels}, out_channels={layer.out_channels}, kernel_size={layer.kernel_size[0]})")
+        elif isinstance(layer, nn.Conv2d):
+            layers.append(f"Conv2d(in_channels={layer.in_channels}, out_channels={layer.out_channels}, kernel_size={layer.kernel_size[0]})")
+        elif isinstance(layer, nn.Conv3d):
+            layers.append(f"Conv3d(in_channels={layer.in_channels}, out_channels={layer.out_channels}, kernel_size={layer.kernel_size[0]})")
+    return ' '.join(layers)
+
+# Convert networks to text
+network_texts = [network_to_text(net) for net in networks]
+
+# Function to generate description from model
+def generate_description(model, text, max_len=100):
+    model.eval()
+    with torch.no_grad():
+        input_tensor = torch.tensor([ord(c) for c in text], dtype=torch.long).unsqueeze(0)
+        input_tensor = input_tensor[:, :max_len]
+        output_tensor = model(input_tensor, input_tensor)
+        output_text = ''.join([chr(c) for c in output_tensor.argmax(2).squeeze().tolist()])
+    return output_text
+
+# Assuming 'model' is the trained model instance
+# Generate descriptions for the networks
+generated_descriptions = [generate_description(model, text) for text in network_texts]
+
+# Compare generated descriptions with expected ones
+for i, (generated, expected) in enumerate(zip(generated_descriptions, expected_descriptions)):
+    print(f"Network {i+1}:")
+    print(f"Generated: {generated}")
+    print(f"Expected: {expected}")
+    print(f"Match: {generated == expected}\n")
